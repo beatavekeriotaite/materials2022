@@ -1,0 +1,19 @@
+---
+title: "Assignment_W1"
+author: "Beata Vekeriotaite"
+date: "3/7/2022"
+output: html_document
+---
+
+
+## load the epiwraps library
+```{r}
+library(epiwraps)
+```
+
+
+## print the session info 
+
+```{r}
+sessionInfo()
+```
