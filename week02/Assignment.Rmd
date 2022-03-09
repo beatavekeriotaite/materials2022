@@ -1,0 +1,106 @@
+---
+title: "Week 2 Assignment"
+author: "Beata Vekeriotaite"
+date: "3/7/2022"
+output: html_document
+---
+
+```{r}
+suppressPackageStartupMessages({
+  library(AnnotationHub)
+  library(ensembldb)
+  library(GenomicRanges)
+  library(epiwraps)
+})
+```
+
+# Find and download the mouse (Mus Musculus) EnsDb object, version 102, genome build GRCm38
+
+```{r}
+
+ah <- AnnotationHub()
+
+# to query the AH programmatically:
+
+ensdb_mouse <- query (ah, c("Mus Musculus", "EnsDb", "GRCm38", "102"))
+
+# to query the AH programmatically:
+
+# to browse the AnnotationHub interactively:
+
+# display(ah)
+
+ensdb <- ah[["AH89211"]]
+
+```
+
+# Find and download the mouse (Mus Musculus) genome sequence (dna_sm) in TwoBit/2bit format for GRCm38
+
+```{r}
+
+dna_sm_grcm38 <- ah[["AH88477"]]
+
+```
+
+
+# Find and download the drosophila melanogaster genome sequence ( dna_sm ) in TwoBit/2bit format for BDGP6
+
+```{r}
+
+dna_sm_bdgp6 <- ah[["AH99424"]]
+
+```
+
+
+# Using the mouse EnsDb, find the following:
+
+## How many different ensembl gene IDs and gene symbols are there for protein-coding genes?
+
+```{r}
+
+# protein-coding genes
+
+gene_IDs <- transcripts (ensdb, filter = GeneBiotypeFilter("protein_coding"))
+
+length(unique(gene_IDs$gene_id)) + length(unique(gene_IDs$gene_name))
+
+# protein-coding transcripts
+
+txs <- transcripts(ensdb, columns=c("tx_id", "tx_biotype", "gene_id", "gene_name"), filter =TxBiotypeFilter("protein_coding"))
+
+length(unique(txs$gene_id)) + length(unique(txs$gene_name))
+
+
+## not sure which one I was supposed to go with here. 
+
+```
+
+## Plot the distribution (histogram) of how many exons protein-coding genes have
+
+```{r}
+txs <- transcripts(ensdb)
+
+exs_per_tx <- exonsBy(ensdb, column=c("tx_id","tx_biotype"), 
+                    filter=TxBiotypeFilter("protein_coding"))
+
+total_exons_per_transcript <- lengths(exs_per_tx)
+
+hist(total_exons_per_transcript, xlim = c(0,50), breaks = 300, ylim = c(0,9500))
+
+
+
+```
+
+
+## Plot the distribution of the (spliced) length of protein-coding transcripts
+
+```{r}
+
+protein_coding_txs <- transcripts (ensdb, filter = TxBiotypeFilter("protein_coding"))
+
+plot(width(protein_coding_txs))
+
+```
+
+
+
