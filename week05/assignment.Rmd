@@ -1,0 +1,71 @@
+---
+title: "assignment"
+author: "Beata Vekeriotaite"
+date: "3/30/2022"
+output: html_document
+---
+<!-- setwd("/home/bvekeriotait/public/BeataVekeriotaite/Bioinformatics course 2022/Practice/Assignments/materials2022/week05/") -->
+
+
+```{r}
+suppressPackageStartupMessages({
+  library(AnnotationHub)
+  library(ensembldb)
+  library(GenomicRanges)
+  library(epiwraps)
+  library(rtracklayer)
+  library(ggplot2)
+})
+ah <- AnnotationHub(localHub=TRUE)
+ensdb <- ah[["AH89211"]]
+```
+
+
+## Downloading the data
+
+Downloading peaks and signals for in Bruce mESC
+
+```{r, eval=FALSE}
+
+dir.create("peaks")
+dir.create("tracks")
+options(timeout=1800)
+
+# H3K27me3
+download.file("https://www.encodeproject.org/files/ENCFF008XKX/@@download/ENCFF008XKX.bed.gz", "peaks/H3K27me3.bed.gz")
+download.file("https://www.encodeproject.org/files/ENCFF160FEV/@@download/ENCFF160FEV.bigWig", "tracks/H3K27me3.bw")
+
+# H3K4me3
+download.file("https://www.encodeproject.org/files/ENCFF247GVM/@@download/ENCFF247GVM.bed.gz", "peaks/H3K4me3.bed.gz")
+download.file("https://www.encodeproject.org/files/ENCFF611GSQ/@@download/ENCFF611GSQ.bigWig", "tracks/H3K4me3.bw")
+
+# H3K27me3_myocyte
+download.file("https://www.encodeproject.org/files/ENCFF044YOI/@@download/ENCFF044YOI.bed.gz", "peaks/H3K27me3_myocyte.bed.gz")
+download.file("https://www.encodeproject.org/files/ENCFF045JOU/@@download/ENCFF045JOU.bigWig", "tracks/H3K27me3_myocyte.bw")
+
+# H3K4me3_myocyte
+download.file("https://www.encodeproject.org/files/ENCFF944EDY/@@download/ENCFF944EDY.bed.gz", "peaks/H3K4me3_myocyte.bed.gz")
+download.file("https://www.encodeproject.org/files/ENCFF503YQC/@@download/ENCFF503YQC.bigWig", "tracks/H3K4me3_myocyte.bw")
+
+```
+
+## Reading in the data
+
+```{r}
+k4me3_mESC <- import("peaks/H3K4me3.bed.gz", format="NarrowPeak")
+k27me3_mESC <- import("peaks/H3K27me3.bed.gz", format="NarrowPeak")
+k27me3_myocyte <- import("peaks/H3K27me3_myocyte.bed.gz", format="NarrowPeak")
+k4me3_myocyte <- import("peaks/H3K4me3_myocyte.bed.gz", format="NarrowPeak")
+```
+
+# How many of the mESC bivalent domains are, in this differentiated cell type, overlapping either mark or their combination?
+
+```{r}
+
+listOfRegions <- list(k4me3_mESC=k4me3_mESC, k4me3_myocyte=k4me3_myocyte, k27me3_mESC=k27me3_mESC, k27me3_myocyte=k27me3_myocyte)
+
+regionOverlaps(listOfRegions)
+
+regionUpset(listOfRegions)
+
+```
