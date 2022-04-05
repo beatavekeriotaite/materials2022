@@ -1,0 +1,120 @@
+---
+title: "asssignment week 6"
+author: "Beata Vekeriotaite"
+date: "4/1/2022"
+output: html_document
+---
+
+<!-- setwd("/home/bvekeriotait/public/BeataVekeriotaite/Bioinformatics course 2022/Practice/Assignments/materials2022/week06/") -->
+
+```{r, eval=FALSE}
+suppressPackageStartupMessages({
+  library(GenomicRanges)
+  library(memes)
+  library(Biostrings)
+  library(AnnotationHub)
+  library(MotifDb)
+  library(universalmotif)
+  library(PWMEnrich)
+  library(ggplot2)
+  library(GenomeInfoDb)
+})
+```
+
+# Obtaining peak sequences for mouse MYOD1
+
+```{r}
+
+download.file("https://www.encodeproject.org/files/ENCFF287INI/@@download/ENCFF287INI.bed.gz", "mC2C12_MYOD1_ENCFF287INI.bed.gz")
+peaks <- rtracklayer::import("mC2C12_MYOD1_ENCFF287INI.bed.gz", format="NarrowPeak")
+seqlevelsStyle(peaks) <- "Ensembl"
+peaks_chr1 <- peaks[seqnames(peaks)=="1"]
+peak_centers <- resize(peaks_chr1, fix="center", width=100)
+
+# the genome sequence (2bit file; mouse GRCm38):
+ah <- AnnotationHub()
+genome <- ah[["AH49773"]]
+
+# sequences corresponding to the peak centers:
+peak_seqs <- memes::get_sequence(peak_centers, genome)
+
+```
+
+# Getting the MYOD1 motif
+
+```{r}
+# we search for "MYOD1" in the motif database
+motifs <- query(MotifDb, "MYOD1")
+
+# there are several matching motifs:
+names(motifs)
+
+# we select one:
+motif <- motifs[["Mmusculus-jaspar2016-Myod1-MA0499.1"]]
+
+```
+
+# Function for finding motifs
+
+```{r, eval=FALSE}
+
+findMotifInstances <- function(seqs, motif, keepMatchedSeq=FALSE, ...){
+  motif <- universalmotif::convert_motifs(motif, "TFBSTools-PWMatrix")
+  x <- suppressWarnings(TFBSTools::searchSeq(motif, subject=seqs))
+  peaks <- strsplit(gsub("-",":",names(seqs)), ":")
+  if(all(lengths(peaks)==3)){ # convert relative coordinates to absolute
+    chrs <- sapply(peaks,FUN=function(x) x[1])
+    offsets <- sapply(peaks,FUN=function(x) as.integer(x[2]))-1L
+    i <- rep(seq_along(x),lengths(x))
+    return(GRanges(chrs[i], 
+                   IRanges(offsets[i]+as.integer(unlist(lapply(x, start))),
+                           offsets[i]+as.integer(unlist(lapply(x, end)))),
+                   strand=unlist(lapply(x, strand)),
+                   score=as.numeric(unlist(lapply(x, FUN=function(x) score(x))))
+                   ))
+  }
+  x <- as(x, "GRanges")
+  score(x) <- x$absScore
+  keepFields <- c("score","relScore")
+  if(keepMatchedSeq) keepFields <- c(keepFields, "siteSeqs")
+  mcols(x) <- mcols(x)[,intersect(colnames(mcols(x)), keepFields)]
+  x
+}
+
+```
+
+# Finding the motif instances
+
+```{r}
+
+# instances of the motif in the MYOD1 peaks' sequences
+
+motif_in_MOYD1_peaks <- findMotifInstances(peak_seqs, motif, mc.cores=2)
+
+
+# instances of the motif in the chromosome 1
+
+chr1 <- import(genome)[["1"]]
+
+motif_in_chr1 <- findMotifInstances(chr1, motif, mc.cores=2)
+
+
+# instances of motif bound by MYOD1 in chr1
+
+motif_bound_by_MYOD1 <- findOverlaps(motif_in_chr1, motif_in_MOYD1_peaks)
+
+length(motif_bound_by_MYOD1)
+
+```
+
+# Of all the peaks, what proportion contains a motif for the factor?
+
+Of the `r length(peak_seqs)` peaks, `r length(motif_in_MOYD1_peaks)` contain a motif
+
+--> this is very odd because it appears as if there are more sequences containing MYOD1 peak than there are peaks in total. How can this be explained? 
+
+
+# Of all instances of that motif in chromosome 1, what proportion is bound by the factor (i.e. has a peak)?
+
+Of the `r length(motif_in_chr1)` motif instances, `r length(motif_bound_by_MYOD1)/length(motif_in_chr1)` overlap a peak
+
