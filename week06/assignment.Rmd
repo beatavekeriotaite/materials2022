@@ -7,7 +7,7 @@ output: html_document
 
 <!-- setwd("/home/bvekeriotait/public/BeataVekeriotaite/Bioinformatics course 2022/Practice/Assignments/materials2022/week06/") -->
 
-```{r, eval=FALSE}
+```{r}
 suppressPackageStartupMessages({
   library(GenomicRanges)
   library(memes)
@@ -18,6 +18,7 @@ suppressPackageStartupMessages({
   library(PWMEnrich)
   library(ggplot2)
   library(GenomeInfoDb)
+  library(ensembldb)
 })
 ```
 
@@ -56,7 +57,7 @@ motif <- motifs[["Mmusculus-jaspar2016-Myod1-MA0499.1"]]
 
 # Function for finding motifs
 
-```{r, eval=FALSE}
+```{r}
 
 findMotifInstances <- function(seqs, motif, keepMatchedSeq=FALSE, ...){
   motif <- universalmotif::convert_motifs(motif, "TFBSTools-PWMatrix")
@@ -94,7 +95,7 @@ motif_in_MOYD1_peaks <- findMotifInstances(peak_seqs, motif, mc.cores=2)
 
 # instances of the motif in the chromosome 1
 
-chr1 <- import(genome)[["1"]]
+chr1 <- import(genome)["1"]
 
 motif_in_chr1 <- findMotifInstances(chr1, motif, mc.cores=2)
 
