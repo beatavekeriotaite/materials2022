@@ -92,7 +92,6 @@ findMotifInstances <- function(seqs, motif, keepMatchedSeq=FALSE, ...){
 
 motif_in_MOYD1_peaks <- findMotifInstances(peak_seqs, motif, mc.cores=2)
 
-
 # instances of the motif in the chromosome 1
 
 chr1 <- import(genome)["1"]
