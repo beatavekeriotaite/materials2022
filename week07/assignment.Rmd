@@ -1,0 +1,110 @@
+---
+title: "assignment"
+author: "Beata Vekeriotaite"
+date: "4/19/2022"
+output: html_document
+---
+
+```{r}
+suppressPackageStartupMessages({
+  library(epiwraps)
+  library(AnnotationHub)
+  library(MotifDb)
+  library(memes)
+  library(universalmotif)
+  library(ensembldb)
+  library(ggplot2)
+})
+ah <- AnnotationHub(localHub=TRUE)
+ensdb <- ah[["AH89211"]]
+
+setwd("/home/bvekeriotait/public/BeataVekeriotaite/Bioinformatics course 2022/Practice/Assignments/materials2022/week07")
+
+```
+
+
+## Preparing tracks
+
+```{r}
+bam <- "atac.chr19.bam"
+
+# create a track using only nucleosome-free fragments, computing cuts
+bam2bw(bam, output_bw = "nucleosome_free_cuts.bw", paired=TRUE, binWidth=1L, minFragLength=30,
+       maxFragLength=115, type="ends", forceSeqlevelsStyle = "Ensembl")
+
+# create a track using only nucleosome-containing fragments, computing coverage
+bam2bw(bam, output_bw = "nucleosome_containing_cuts.bw", paired=TRUE, binWidth=1L, minFragLength=130, type="ends", forceSeqlevelsStyle = "Ensembl")
+
+```
+
+
+
+# Function for finding motifs
+
+```{r}
+findMotifInstances <- function(seqs, motif, keepMatchedSeq=FALSE, ...){
+  motif <- universalmotif::convert_motifs(motif, "TFBSTools-PWMatrix")
+  x <- suppressWarnings(TFBSTools::searchSeq(motif, subject=seqs))
+  peaks <- strsplit(gsub("-",":",names(seqs)), ":")
+  if(all(lengths(peaks)==3)){ # convert relative coordinates to absolute
+    chrs <- sapply(peaks,FUN=function(x) x[1])
+    offsets <- sapply(peaks,FUN=function(x) as.integer(x[2]))-1L
+    i <- rep(seq_along(x),lengths(x))
+    return(GRanges(chrs[i], 
+                   IRanges(offsets[i]+as.integer(unlist(lapply(x, start))),
+                           offsets[i]+as.integer(unlist(lapply(x, end)))),
+                   strand=unlist(lapply(x, strand)),
+                   score=as.numeric(unlist(lapply(x, FUN=function(x) score(x))))
+                   ))
+  }
+  x <- as(x, "GRanges")
+  score(x) <- x$absScore
+  keepFields <- c("score","relScore")
+  if(keepMatchedSeq) keepFields <- c(keepFields, "siteSeqs")
+  mcols(x) <- mcols(x)[,intersect(colnames(mcols(x)), keepFields)]
+  x
+}
+```
+
+
+## Obtaining the sites with a GCR motif
+```{r}
+# get GCR sites
+motif_GCR <- query(MotifDb, c("GCR","Mus"))[[1]]
+genome <- ah[["AH68356"]]
+
+# get the sequence for chr19:
+chr19 <- GRanges("19", IRanges(1L,seqlengths(genome)["19"]))
+chr19 <- setNames(getSeq(genome, chr19), "19")
+
+# find motifs
+motifs_GCR <- findMotifInstances(chr19, motif_GCR, mc.cores=2)
+
+accessible_regions <- callPeaks("atac.chr19.bam")
+
+seqlevelsStyle(accessible_regions) <- "Ensembl"
+
+motifs_in_peaks <- motifs_GCR[overlapsAny(motifs_GCR, accessible_regions)]
+
+```
+
+## Plotting signal around the GCR motif 
+
+```{r}
+# we prepare the list of tracks
+tracks <- c("Nucleosome-free cuts"="nucleosome_free_cuts.bw", "Nucleosome-containing cuts"="nucleosome_containing_cuts.bw")
+
+# extract signals around the motif occurences
+# we zoom in to 500bp around the motif centers, in windows of 5bp
+
+sm_GCR <- signal2Matrix(tracks, motifs_in_peaks, w=5, extend=500)
+
+# plot the signals:
+plotEnrichedHeatmaps(sm_GCR, trim=0.95)
+
+# renormalize using border backgrounds
+smb_GCR <- renormalizeBorders(sm_GCR)
+plotEnrichedHeatmaps(smb_GCR, trim=0.95)
+
+```
+
