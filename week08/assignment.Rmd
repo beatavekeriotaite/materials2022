@@ -1,0 +1,31 @@
+---
+title: "assignment"
+author: "Beata Vekeriotaite"
+date: "5/2/2022"
+output: html_document
+---
+
+***
+
+#### What is the topic?
+I might be able to get some data of my own in which case I would use that. The topic would be comparing iPSC-derived neurons from healthy and disease-affected individuals. I would compare how profile of histone modifications and transcriptome are different. Won't go into too much detail just yet in case I don't actually get the data in time!
+
+If I don't get this data in time, I will do the same but using public data. Not sure what the topic will be in that case but probably also looking at how a certain disease affects histone modifications and whether that has an effect on gene expression (well, I say 'has an effect' but I will basically want to see if there's a correlation).
+
+*** 
+
+#### What data will you be using?
+
+I will select 4-6 histone modifications and get ChIP-seq (or Cut and Tag) data for it from somewhere. Haven't really had a chance to search for it extensively yet! Additionally, I will get RNA-seq data, ideally from the same samples. If not, the same type of sample will do. 
+
+***
+
+#### What are the analyses you wish to reproduce, or the questions you wish to answer?
+
+Ideally I would like to explore how the disease affect chromatin state (histone modifications) and how that's linked to on neurodevelopment (RNAseq data). I'm aware this is vague and I will elaborate more in a couple of weeks, but how I see in terms of analyzing it:
+
+- Identify and characterize differentially modified sequences, i.e. where the differences in histone modifications are located (Are active marks affected more than repressive ones or vice versa? Where are these differences found - gene bodies, promoters, enhancers?)
+- Identify up- and down-regulated genes in disease samples. 
+- Can the changes in gene expression in part be explained through changes in histone modifications?
+
+
